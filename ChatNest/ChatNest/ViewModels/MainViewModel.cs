@@ -221,7 +221,7 @@ namespace ChatNest.ViewModels
             {
                 var session = new ChatSessionData
                 {
-                    Version = "0.1.2",
+                    Version = AppVersion,
                     Messages = Messages.Select(m => new MessageData
                     {
                         Id = m.Id,
