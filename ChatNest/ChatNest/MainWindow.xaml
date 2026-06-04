@@ -173,7 +173,7 @@
                        FontSize="14"
                        Foreground="#BDBDBD"
                        HorizontalAlignment="Center"/>
-            <TextBlock Text="Ctrl + Enter で投稿"
+            <TextBlock Text="Ctrl / Shift + Enter で投稿"
                        FontSize="11"
                        Foreground="#D0D0D0"
                        HorizontalAlignment="Center"
@@ -216,8 +216,8 @@
                                  IsChecked="{Binding SelectedSpeaker, Converter={StaticResource RadioConverter}, ConverterParameter=補足, Mode=TwoWay}"
                                  GroupName="Speaker"/>
                     <RadioButton Style="{StaticResource SpeakerToggle}"
-                                 Content="要約"
-                                 IsChecked="{Binding SelectedSpeaker, Converter={StaticResource RadioConverter}, ConverterParameter=要約, Mode=TwoWay}"
+                                 Content="結論"
+                                 IsChecked="{Binding SelectedSpeaker, Converter={StaticResource RadioConverter}, ConverterParameter=結論, Mode=TwoWay}"
                                  GroupName="Speaker"/>
                 </StackPanel>
 
