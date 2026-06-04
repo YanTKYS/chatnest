@@ -22,10 +22,23 @@ namespace ChatNest
 
         private void InputBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Enter && Keyboard.Modifiers == ModifierKeys.Control)
+            var mods = Keyboard.Modifiers;
+
+            // Post: Ctrl+Enter or Shift+Enter
+            if (e.Key == Key.Enter &&
+                (mods == ModifierKeys.Control || mods == ModifierKeys.Shift))
             {
                 if (_vm.PostCommand.CanExecute(null))
                     _vm.PostCommand.Execute(null);
+                e.Handled = true;
+                return;
+            }
+
+            // Speaker cycle: Ctrl+→/← or Shift+→/←
+            if ((e.Key == Key.Right || e.Key == Key.Left) &&
+                (mods == ModifierKeys.Control || mods == ModifierKeys.Shift))
+            {
+                _vm.CycleSpeaker(e.Key == Key.Right);
                 e.Handled = true;
             }
         }

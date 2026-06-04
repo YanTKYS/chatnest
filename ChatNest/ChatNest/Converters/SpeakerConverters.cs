@@ -70,16 +70,9 @@ namespace ChatNest.Converters
 
     public class SpeakerBorderThicknessConverter : IValueConverter
     {
+        // Bubble is always to the right of the label, so left border for all speakers.
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            if (value is Speaker speaker)
-            {
-                return speaker == Speaker.自分
-                    ? new Thickness(0, 0, 3, 0)
-                    : new Thickness(3, 0, 0, 0);
-            }
-            return new Thickness(3, 0, 0, 0);
-        }
+            => new Thickness(3, 0, 0, 0);
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
             => throw new NotImplementedException();

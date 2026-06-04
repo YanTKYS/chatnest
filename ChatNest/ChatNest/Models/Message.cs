@@ -7,7 +7,7 @@ namespace ChatNest.Models
         自分,
         反論,
         補足,
-        要約
+        結論
     }
 
     public class Message
