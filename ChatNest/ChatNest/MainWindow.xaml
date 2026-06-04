@@ -20,26 +20,27 @@
         <conv:SpeakerButtonAlignmentConverter x:Key="SpeakerBtnAlign"/>
         <conv:SpeakerTextAlignmentConverter x:Key="SpeakerTextAlign"/>
 
-        <!-- Message bubble template -->
+        <!-- Message bubble template — 2-row compact layout -->
         <DataTemplate x:Key="MessageTemplate" DataType="{x:Type models:Message}">
-            <Grid Margin="16,4">
+            <Grid Margin="16,3">
                 <Border HorizontalAlignment="{Binding Speaker, Converter={StaticResource SpeakerAlign}}"
                         MaxWidth="500"
                         CornerRadius="10"
                         Background="{Binding Speaker, Converter={StaticResource SpeakerBg}}"
                         BorderBrush="{Binding Speaker, Converter={StaticResource SpeakerAccent}}"
                         BorderThickness="{Binding Speaker, Converter={StaticResource SpeakerBorderThickness}}">
-                    <Grid Margin="14,10">
+                    <Grid Margin="12,8">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <!-- Header row: speaker label + delete button -->
-                        <Grid Grid.Row="0" Margin="0,0,0,4">
+                        <!-- Row 0: speaker label + timestamp + delete button (same line) -->
+                        <Grid Grid.Row="0" Margin="0,0,0,3">
                             <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
@@ -48,33 +49,31 @@
                                        FontSize="11"
                                        FontWeight="Bold"
                                        Foreground="{Binding Speaker, Converter={StaticResource SpeakerAccent}}"
-                                       HorizontalAlignment="{Binding Speaker, Converter={StaticResource SpeakerLabelAlign}}"/>
+                                       VerticalAlignment="Center"/>
 
-                            <Button Grid.Column="1"
+                            <TextBlock Grid.Column="2"
+                                       Text="{Binding CreatedAt, StringFormat=HH:mm}"
+                                       FontSize="10"
+                                       Foreground="#9E9E9E"
+                                       VerticalAlignment="Center"
+                                       Margin="6,0"/>
+
+                            <Button Grid.Column="3"
                                     Style="{StaticResource IconButton}"
                                     Content="✕"
                                     ToolTip="この発言を削除"
-                                    VerticalAlignment="Top"
+                                    VerticalAlignment="Center"
                                     Command="{Binding DataContext.DeleteMessageCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                     CommandParameter="{Binding}"/>
                         </Grid>
 
-                        <!-- Message text -->
+                        <!-- Row 1: message text -->
                         <TextBlock Grid.Row="1"
                                    Text="{Binding Text}"
                                    TextWrapping="Wrap"
                                    FontSize="13"
                                    LineHeight="20"
-                                   Foreground="#212121"
-                                   TextAlignment="{Binding Speaker, Converter={StaticResource SpeakerTextAlign}}"
-                                   Margin="0,0,0,6"/>
-
-                        <!-- Timestamp -->
-                        <TextBlock Grid.Row="2"
-                                   Text="{Binding CreatedAt, StringFormat=HH:mm}"
-                                   FontSize="10"
-                                   Foreground="#9E9E9E"
-                                   HorizontalAlignment="{Binding Speaker, Converter={StaticResource SpeakerLabelAlign}}"/>
+                                   Foreground="#212121"/>
                     </Grid>
                 </Border>
             </Grid>
@@ -117,7 +116,6 @@
 
                 <!-- Action buttons -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <!-- File operations -->
                     <Button Style="{StaticResource GhostButton}"
                             Content="新規"
                             ToolTip="新規チャットを開始"
@@ -129,27 +127,19 @@
                             Margin="0,0,4,0"
                             Command="{Binding LoadCommand}"/>
                     <Button Style="{StaticResource GhostButton}"
-                            Content="上書き保存"
+                            Content="保存"
                             ToolTip="ファイルに保存（未保存の場合は名前を付けて保存）"
-                            Margin="0,0,12,0"
-                            Command="{Binding SaveCommand}"/>
-                    <!-- Export -->
-                    <Button Style="{StaticResource GhostButton}"
-                            Content="Markdownコピー"
-                            ToolTip="全件をMarkdown形式でコピー"
                             Margin="0,0,4,0"
-                            Command="{Binding CopyMarkdownCommand}"/>
+                            Command="{Binding SaveCommand}"/>
                     <Button Style="{StaticResource GhostButton}"
-                            Content="IdeaNest用コピー"
-                            ToolTip="IdeaNest貼り付け用にコピー"
+                            Content="名前を付けて保存"
+                            ToolTip="新しいファイルとして保存"
                             Margin="0,0,12,0"
-                            Command="{Binding CopyIdeaNestCommand}"/>
-                    <!-- Danger -->
-                    <Button Style="{StaticResource DangerButton}"
-                            Content="全件削除"
-                            ToolTip="すべての発言を削除"
-                            Command="{Binding DeleteAllCommand}"/>
-                </StackPanel>
+                            Command="{Binding SaveAsCommand}"/>
+                    <Button Style="{StaticResource PrimaryButton}"
+                            Content="終了処理"
+                            ToolTip="コピー・削除などの終了処理"
+                            Click="FinishButton_Click"/>
             </Grid>
         </Border>
 

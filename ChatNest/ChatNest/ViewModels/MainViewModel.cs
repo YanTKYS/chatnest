@@ -51,51 +51,54 @@ namespace ChatNest.ViewModels
 
         private readonly RelayCommand _postCommand;
         private readonly RelayCommand _deleteAllCommand;
-        private readonly RelayCommand _copyMarkdownCommand;
-        private readonly RelayCommand _copyIdeaNestCommand;
-        private readonly RelayCommand _saveCommand;
 
         public ICommand PostCommand => _postCommand;
         public ICommand DeleteMessageCommand { get; }
         public ICommand DeleteAllCommand => _deleteAllCommand;
-        public ICommand CopyMarkdownCommand => _copyMarkdownCommand;
-        public ICommand CopyIdeaNestCommand => _copyIdeaNestCommand;
-        public ICommand SaveCommand => _saveCommand;
+        public ICommand SaveCommand { get; }
         public ICommand SaveAsCommand { get; }
         public ICommand LoadCommand { get; }
         public ICommand NewCommand { get; }
 
         public MainViewModel()
         {
-            _postCommand = new RelayCommand(Post, () => !string.IsNullOrWhiteSpace(InputText));
+            _postCommand    = new RelayCommand(Post, () => !string.IsNullOrWhiteSpace(InputText));
             _deleteAllCommand = new RelayCommand(DeleteAll, () => Messages.Count > 0);
-            _copyMarkdownCommand = new RelayCommand(CopyMarkdown, () => Messages.Count > 0);
-            _copyIdeaNestCommand = new RelayCommand(CopyIdeaNest, () => Messages.Count > 0);
-            _saveCommand = new RelayCommand(Save);
 
             DeleteMessageCommand = new RelayCommand<Message>(DeleteMessage);
+            SaveCommand   = new RelayCommand(Save);
             SaveAsCommand = new RelayCommand(SaveAs);
-            LoadCommand = new RelayCommand(Load);
-            NewCommand = new RelayCommand(New);
+            LoadCommand   = new RelayCommand(Load);
+            NewCommand    = new RelayCommand(New);
 
             Messages.CollectionChanged += OnMessagesChanged;
         }
 
         private void OnMessagesChanged(object? sender, NotifyCollectionChangedEventArgs e)
-        {
-            _deleteAllCommand.RaiseCanExecuteChanged();
-            _copyMarkdownCommand.RaiseCanExecuteChanged();
-            _copyIdeaNestCommand.RaiseCanExecuteChanged();
-        }
+            => _deleteAllCommand.RaiseCanExecuteChanged();
+
+        // ── Post / New ────────────────────────────────────────────────────────
 
         private void Post()
         {
             var text = InputText.Trim();
             if (string.IsNullOrEmpty(text)) return;
-
             Messages.Add(new Message { Speaker = SelectedSpeaker, Text = text });
             InputText = string.Empty;
         }
+
+        private void New()
+        {
+            if (Messages.Count > 0 &&
+                MessageBox.Show("現在のログを破棄して新規チャットを開始しますか？", "新規チャット",
+                    MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
+                return;
+
+            Messages.Clear();
+            SetCurrentFile(null);
+        }
+
+        // ── Delete ────────────────────────────────────────────────────────────
 
         private void DeleteMessage(Message? message)
         {
@@ -113,20 +116,12 @@ namespace ChatNest.ViewModels
                 Messages.Clear();
         }
 
-        private void New()
-        {
-            if (Messages.Count > 0)
-            {
-                if (MessageBox.Show("現在のログを破棄して新規チャットを開始しますか？", "新規チャット",
-                        MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
-                    return;
-            }
-            Messages.Clear();
-            SetCurrentFile(null);
-        }
+        // ── 終了処理コピー (save-then-copy) ──────────────────────────────────
 
-        private void CopyMarkdown()
+        public void ExecuteMarkdownCopyWithSave()
         {
+            if (!SaveForCopy()) return;
+
             var sb = new StringBuilder();
             sb.AppendLine("# ChatNest Log");
             sb.AppendLine();
@@ -137,11 +132,16 @@ namespace ChatNest.ViewModels
                 sb.AppendLine(msg.Text);
                 sb.AppendLine();
             }
-            TrySetClipboard(sb.ToString().TrimEnd());
+
+            if (TrySetClipboard(sb.ToString().TrimEnd()))
+                MessageBox.Show("Markdown形式でコピーしました。", "コピー完了",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        private void CopyIdeaNest()
+        public void ExecuteIdeaNestCopyWithSave()
         {
+            if (!SaveForCopy()) return;
+
             var sb = new StringBuilder();
             foreach (var msg in Messages)
             {
@@ -149,18 +149,39 @@ namespace ChatNest.ViewModels
                 sb.AppendLine(msg.Text);
                 sb.AppendLine();
             }
-            TrySetClipboard(sb.ToString().TrimEnd());
+
+            if (TrySetClipboard(sb.ToString().TrimEnd()))
+                MessageBox.Show("IdeaNest用形式でコピーしました。", "コピー完了",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        private static void TrySetClipboard(string text)
+        // 保存してからコピー。保存キャンセル時は false を返す。
+        private bool SaveForCopy()
         {
-            try { Clipboard.SetText(text); }
-            catch (Exception ex)
+            if (_currentFilePath != null)
+                return TryWriteToFile(_currentFilePath, updatePath: false);
+
+            var dlg = new SaveFileDialog
             {
-                MessageBox.Show($"クリップボードへのコピーに失敗しました。再度お試しください。\n{ex.Message}",
-                    "コピー失敗", MessageBoxButton.OK, MessageBoxImage.Warning);
+                Filter = "ChatNest ファイル (*.chatnest)|*.chatnest",
+                DefaultExt = ".chatnest",
+                FileName = $"chatnest_{DateTime.Now:yyyyMMdd_HHmm}"
+            };
+
+            if (dlg.ShowDialog() != true)
+            {
+                MessageBox.Show(
+                    "保存がキャンセルされたため、コピーは実行しませんでした。",
+                    "コピー中止",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                return false;
             }
+
+            return TryWriteToFile(dlg.FileName, updatePath: true);
         }
+
+        // ── Save / Load ───────────────────────────────────────────────────────
 
         private void Save()
         {
@@ -180,13 +201,13 @@ namespace ChatNest.ViewModels
                 TryWriteToFile(dlg.FileName, updatePath: true);
         }
 
-        private void TryWriteToFile(string path, bool updatePath)
+        private bool TryWriteToFile(string path, bool updatePath)
         {
             try
             {
                 var session = new ChatSessionData
                 {
-                    Version = "0.1.1",
+                    Version = "0.1.2",
                     Messages = Messages.Select(m => new MessageData
                     {
                         Id = m.Id,
@@ -203,11 +224,13 @@ namespace ChatNest.ViewModels
                     SetCurrentFile(path);
                     _settings.AddRecentFile(path);
                 }
+                return true;
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"保存に失敗しました。\n{ex.Message}", "保存エラー",
                     MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
             }
         }
 
@@ -229,28 +252,19 @@ namespace ChatNest.ViewModels
                 var session = JsonSerializer.Deserialize<ChatSessionData>(json);
                 if (session?.Messages == null) return;
 
-                if (Messages.Count > 0)
-                {
-                    if (MessageBox.Show("現在のログを破棄してファイルを読み込みますか？", "読み込みの確認",
-                            MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
-                        return;
-                }
+                if (Messages.Count > 0 &&
+                    MessageBox.Show("現在のログを破棄してファイルを読み込みますか？", "読み込みの確認",
+                        MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
+                    return;
 
                 Messages.Clear();
                 int skipped = 0;
                 foreach (var data in session.Messages)
                 {
                     if (Enum.TryParse<Speaker>(data.Speaker, out var speaker))
-                    {
-                        Messages.Add(new Message
-                        {
-                            Id = data.Id,
-                            Speaker = speaker,
-                            Text = data.Text,
-                            CreatedAt = data.CreatedAt
-                        });
-                    }
-                    else { skipped++; }
+                        Messages.Add(new Message { Id = data.Id, Speaker = speaker, Text = data.Text, CreatedAt = data.CreatedAt });
+                    else
+                        skipped++;
                 }
 
                 SetCurrentFile(path);
@@ -268,6 +282,21 @@ namespace ChatNest.ViewModels
             }
         }
 
+        // ── Clipboard ────────────────────────────────────────────────────────
+
+        private static bool TrySetClipboard(string text)
+        {
+            try { Clipboard.SetText(text); return true; }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"クリップボードへのコピーに失敗しました。再度お試しください。\n{ex.Message}",
+                    "コピー失敗", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+        }
+
+        // ── Helpers ───────────────────────────────────────────────────────────
+
         private void SetCurrentFile(string? path)
         {
             _currentFilePath = path;
@@ -282,7 +311,7 @@ namespace ChatNest.ViewModels
     public class ChatSessionData
     {
         [JsonPropertyName("version")]
-        public string Version { get; set; } = "0.1.1";
+        public string Version { get; set; } = "0.1.2";
 
         [JsonPropertyName("messages")]
         public List<MessageData> Messages { get; set; } = new();
@@ -290,16 +319,9 @@ namespace ChatNest.ViewModels
 
     public class MessageData
     {
-        [JsonPropertyName("id")]
-        public Guid Id { get; set; }
-
-        [JsonPropertyName("speaker")]
-        public string Speaker { get; set; } = string.Empty;
-
-        [JsonPropertyName("text")]
-        public string Text { get; set; } = string.Empty;
-
-        [JsonPropertyName("createdAt")]
-        public DateTimeOffset CreatedAt { get; set; }
+        [JsonPropertyName("id")]       public Guid Id { get; set; }
+        [JsonPropertyName("speaker")]  public string Speaker { get; set; } = string.Empty;
+        [JsonPropertyName("text")]     public string Text { get; set; } = string.Empty;
+        [JsonPropertyName("createdAt")] public DateTimeOffset CreatedAt { get; set; }
     }
 }
