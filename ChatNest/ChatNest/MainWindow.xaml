@@ -4,7 +4,7 @@
         xmlns:conv="clr-namespace:ChatNest.Converters"
         xmlns:vm="clr-namespace:ChatNest.ViewModels"
         xmlns:models="clr-namespace:ChatNest.Models"
-        Title="ChatNest"
+        Title="{Binding WindowTitle}"
         Icon="Resources/chatnest.ico"
         Width="760" Height="620"
         MinWidth="520" MinHeight="420"
@@ -116,27 +116,35 @@
                 </StackPanel>
 
                 <!-- Action buttons -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,0">
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- File operations -->
+                    <Button Style="{StaticResource GhostButton}"
+                            Content="新規"
+                            ToolTip="新規チャットを開始"
+                            Margin="0,0,4,0"
+                            Command="{Binding NewCommand}"/>
+                    <Button Style="{StaticResource GhostButton}"
+                            Content="開く"
+                            ToolTip=".chatnestファイルを開く"
+                            Margin="0,0,4,0"
+                            Command="{Binding LoadCommand}"/>
+                    <Button Style="{StaticResource GhostButton}"
+                            Content="上書き保存"
+                            ToolTip="ファイルに保存（未保存の場合は名前を付けて保存）"
+                            Margin="0,0,12,0"
+                            Command="{Binding SaveCommand}"/>
+                    <!-- Export -->
                     <Button Style="{StaticResource GhostButton}"
                             Content="Markdownコピー"
                             ToolTip="全件をMarkdown形式でコピー"
-                            Margin="0,0,6,0"
+                            Margin="0,0,4,0"
                             Command="{Binding CopyMarkdownCommand}"/>
                     <Button Style="{StaticResource GhostButton}"
                             Content="IdeaNest用コピー"
                             ToolTip="IdeaNest貼り付け用にコピー"
-                            Margin="0,0,6,0"
+                            Margin="0,0,12,0"
                             Command="{Binding CopyIdeaNestCommand}"/>
-                    <Button Style="{StaticResource GhostButton}"
-                            Content="保存"
-                            ToolTip="ファイルに保存"
-                            Margin="0,0,6,0"
-                            Command="{Binding SaveCommand}"/>
-                    <Button Style="{StaticResource GhostButton}"
-                            Content="開く"
-                            ToolTip=".chatnestファイルを開く"
-                            Margin="0,0,6,0"
-                            Command="{Binding LoadCommand}"/>
+                    <!-- Danger -->
                     <Button Style="{StaticResource DangerButton}"
                             Content="全件削除"
                             ToolTip="すべての発言を削除"

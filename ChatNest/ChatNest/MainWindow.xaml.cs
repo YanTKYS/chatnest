@@ -8,13 +8,16 @@ namespace ChatNest
     {
         private readonly MainViewModel _vm;
 
-        public MainWindow()
+        public MainWindow(string? filePath = null)
         {
             InitializeComponent();
             _vm = new MainViewModel();
             DataContext = _vm;
 
             _vm.Messages.CollectionChanged += (_, _) => ScrollToBottom();
+
+            if (filePath != null)
+                Loaded += (_, _) => _vm.LoadFromPath(filePath);
         }
 
         private void InputBox_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -29,10 +32,9 @@ namespace ChatNest
 
         private void ScrollToBottom()
         {
-            Dispatcher.InvokeAsync(() =>
-            {
-                ChatScrollViewer.ScrollToBottom();
-            }, System.Windows.Threading.DispatcherPriority.Background);
+            Dispatcher.InvokeAsync(
+                () => ChatScrollViewer.ScrollToBottom(),
+                System.Windows.Threading.DispatcherPriority.Background);
         }
     }
 }
