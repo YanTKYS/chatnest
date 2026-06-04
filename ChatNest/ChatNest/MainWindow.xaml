@@ -20,63 +20,51 @@
         <conv:SpeakerButtonAlignmentConverter x:Key="SpeakerBtnAlign"/>
         <conv:SpeakerTextAlignmentConverter x:Key="SpeakerTextAlign"/>
 
-        <!-- Message bubble template — 2-row compact layout -->
+        <!-- Message bubble template — compact horizontal layout (meta outside bubble) -->
         <DataTemplate x:Key="MessageTemplate" DataType="{x:Type models:Message}">
-            <Grid Margin="16,3">
-                <Border HorizontalAlignment="{Binding Speaker, Converter={StaticResource SpeakerAlign}}"
-                        MaxWidth="500"
-                        CornerRadius="10"
-                        Background="{Binding Speaker, Converter={StaticResource SpeakerBg}}"
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="{Binding Speaker, Converter={StaticResource SpeakerAlign}}"
+                        VerticalAlignment="Top"
+                        Margin="16,2"
+                        MaxWidth="580">
+
+                <!-- Meta: [Speaker  HH:mm  ✕] on one compact line -->
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Top"
+                            Margin="0,5,7,0">
+                    <TextBlock Text="{Binding Speaker}"
+                               FontSize="11"
+                               FontWeight="Bold"
+                               Foreground="{Binding Speaker, Converter={StaticResource SpeakerAccent}}"
+                               VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding CreatedAt, StringFormat=HH:mm}"
+                               FontSize="10"
+                               Foreground="#C0C0C0"
+                               Margin="5,0,3,0"
+                               VerticalAlignment="Center"/>
+                    <Button Style="{StaticResource MiniDeleteButton}"
+                            Content="✕"
+                            ToolTip="この発言を削除"
+                            VerticalAlignment="Center"
+                            Command="{Binding DataContext.DeleteMessageCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            CommandParameter="{Binding}"/>
+                </StackPanel>
+
+                <!-- Bubble: text only -->
+                <Border Background="{Binding Speaker, Converter={StaticResource SpeakerBg}}"
                         BorderBrush="{Binding Speaker, Converter={StaticResource SpeakerAccent}}"
-                        BorderThickness="{Binding Speaker, Converter={StaticResource SpeakerBorderThickness}}">
-                    <Grid Margin="12,8">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-
-                        <!-- Row 0: speaker label + timestamp + delete button (same line) -->
-                        <Grid Grid.Row="0" Margin="0,0,0,3">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-
-                            <TextBlock Grid.Column="0"
-                                       Text="{Binding Speaker}"
-                                       FontSize="11"
-                                       FontWeight="Bold"
-                                       Foreground="{Binding Speaker, Converter={StaticResource SpeakerAccent}}"
-                                       VerticalAlignment="Center"/>
-
-                            <TextBlock Grid.Column="2"
-                                       Text="{Binding CreatedAt, StringFormat=HH:mm}"
-                                       FontSize="10"
-                                       Foreground="#9E9E9E"
-                                       VerticalAlignment="Center"
-                                       Margin="6,0"/>
-
-                            <Button Grid.Column="3"
-                                    Style="{StaticResource IconButton}"
-                                    Content="✕"
-                                    ToolTip="この発言を削除"
-                                    VerticalAlignment="Center"
-                                    Command="{Binding DataContext.DeleteMessageCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    CommandParameter="{Binding}"/>
-                        </Grid>
-
-                        <!-- Row 1: message text -->
-                        <TextBlock Grid.Row="1"
-                                   Text="{Binding Text}"
-                                   TextWrapping="Wrap"
-                                   FontSize="13"
-                                   LineHeight="20"
-                                   Foreground="#212121"/>
-                    </Grid>
+                        BorderThickness="3,0,0,0"
+                        CornerRadius="8"
+                        Padding="10,6"
+                        MaxWidth="460">
+                    <TextBlock Text="{Binding Text}"
+                               TextWrapping="Wrap"
+                               FontSize="13"
+                               LineHeight="20"
+                               Foreground="#212121"/>
                 </Border>
-            </Grid>
+
+            </StackPanel>
         </DataTemplate>
     </Window.Resources>
 

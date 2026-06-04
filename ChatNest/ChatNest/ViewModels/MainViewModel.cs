@@ -18,6 +18,8 @@ namespace ChatNest.ViewModels
 {
     public class MainViewModel : INotifyPropertyChanged
     {
+        public const string AppVersion = "0.1.3";
+
         private string _inputText = string.Empty;
         private Speaker _selectedSpeaker = Speaker.自分;
         private string? _currentFilePath;
@@ -44,8 +46,8 @@ namespace ChatNest.ViewModels
         }
 
         public string WindowTitle => _currentFilePath != null
-            ? $"ChatNest — {Path.GetFileName(_currentFilePath)}"
-            : "ChatNest";
+            ? $"ChatNest - {Path.GetFileName(_currentFilePath)} - ver{AppVersion}"
+            : $"ChatNest - ver{AppVersion}";
 
         public Speaker[] Speakers { get; } = Enum.GetValues<Speaker>();
 
@@ -76,6 +78,18 @@ namespace ChatNest.ViewModels
 
         private void OnMessagesChanged(object? sender, NotifyCollectionChangedEventArgs e)
             => _deleteAllCommand.RaiseCanExecuteChanged();
+
+        // ── Speaker cycle ─────────────────────────────────────────────────────
+
+        public void CycleSpeaker(bool forward)
+        {
+            var speakers = Enum.GetValues<Speaker>();
+            int idx = Array.IndexOf(speakers, SelectedSpeaker);
+            idx = forward
+                ? (idx + 1) % speakers.Length
+                : (idx - 1 + speakers.Length) % speakers.Length;
+            SelectedSpeaker = speakers[idx];
+        }
 
         // ── Post / New ────────────────────────────────────────────────────────
 
@@ -261,7 +275,9 @@ namespace ChatNest.ViewModels
                 int skipped = 0;
                 foreach (var data in session.Messages)
                 {
-                    if (Enum.TryParse<Speaker>(data.Speaker, out var speaker))
+                    // Migrate renamed speaker: 要約 → 結論
+                    var speakerName = data.Speaker == "要約" ? "結論" : data.Speaker;
+                    if (Enum.TryParse<Speaker>(speakerName, out var speaker))
                         Messages.Add(new Message { Id = data.Id, Speaker = speaker, Text = data.Text, CreatedAt = data.CreatedAt });
                     else
                         skipped++;
@@ -311,7 +327,7 @@ namespace ChatNest.ViewModels
     public class ChatSessionData
     {
         [JsonPropertyName("version")]
-        public string Version { get; set; } = "0.1.2";
+        public string Version { get; set; } = MainViewModel.AppVersion;
 
         [JsonPropertyName("messages")]
         public List<MessageData> Messages { get; set; } = new();
