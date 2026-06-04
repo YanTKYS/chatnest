@@ -140,6 +140,7 @@
                             Content="終了処理"
                             ToolTip="コピー・削除などの終了処理"
                             Click="FinishButton_Click"/>
+                </StackPanel>
             </Grid>
         </Border>
 
