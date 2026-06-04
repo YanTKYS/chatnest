@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -25,7 +26,12 @@ namespace ChatNest.ViewModels
         public string InputText
         {
             get => _inputText;
-            set { _inputText = value; OnPropertyChanged(); }
+            set
+            {
+                _inputText = value;
+                OnPropertyChanged();
+                _postCommand.RaiseCanExecuteChanged();
+            }
         }
 
         public Speaker SelectedSpeaker
@@ -36,25 +42,40 @@ namespace ChatNest.ViewModels
 
         public Speaker[] Speakers { get; } = Enum.GetValues<Speaker>();
 
-        public ICommand PostCommand { get; }
+        private readonly RelayCommand _postCommand;
+        private readonly RelayCommand _deleteAllCommand;
+        private readonly RelayCommand _copyMarkdownCommand;
+        private readonly RelayCommand _copyIdeaNestCommand;
+
+        public ICommand PostCommand => _postCommand;
         public ICommand DeleteMessageCommand { get; }
-        public ICommand DeleteAllCommand { get; }
-        public ICommand CopyMarkdownCommand { get; }
-        public ICommand CopyIdeaNestCommand { get; }
+        public ICommand DeleteAllCommand => _deleteAllCommand;
+        public ICommand CopyMarkdownCommand => _copyMarkdownCommand;
+        public ICommand CopyIdeaNestCommand => _copyIdeaNestCommand;
         public ICommand SaveCommand { get; }
         public ICommand SaveAsCommand { get; }
         public ICommand LoadCommand { get; }
 
         public MainViewModel()
         {
-            PostCommand = new RelayCommand(Post, () => !string.IsNullOrWhiteSpace(InputText));
+            _postCommand = new RelayCommand(Post, () => !string.IsNullOrWhiteSpace(InputText));
+            _deleteAllCommand = new RelayCommand(DeleteAll, () => Messages.Count > 0);
+            _copyMarkdownCommand = new RelayCommand(CopyMarkdown, () => Messages.Count > 0);
+            _copyIdeaNestCommand = new RelayCommand(CopyIdeaNest, () => Messages.Count > 0);
+
             DeleteMessageCommand = new RelayCommand<Message>(DeleteMessage);
-            DeleteAllCommand = new RelayCommand(DeleteAll, () => Messages.Count > 0);
-            CopyMarkdownCommand = new RelayCommand(CopyMarkdown, () => Messages.Count > 0);
-            CopyIdeaNestCommand = new RelayCommand(CopyIdeaNest, () => Messages.Count > 0);
             SaveCommand = new RelayCommand(Save);
             SaveAsCommand = new RelayCommand(SaveAs);
             LoadCommand = new RelayCommand(Load);
+
+            Messages.CollectionChanged += OnMessagesChanged;
+        }
+
+        private void OnMessagesChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            _deleteAllCommand.RaiseCanExecuteChanged();
+            _copyMarkdownCommand.RaiseCanExecuteChanged();
+            _copyIdeaNestCommand.RaiseCanExecuteChanged();
         }
 
         private void Post()
@@ -113,7 +134,7 @@ namespace ChatNest.ViewModels
                 sb.AppendLine();
             }
 
-            Clipboard.SetText(sb.ToString().TrimEnd());
+            TrySetClipboard(sb.ToString().TrimEnd());
         }
 
         private void CopyIdeaNest()
@@ -127,7 +148,23 @@ namespace ChatNest.ViewModels
                 sb.AppendLine();
             }
 
-            Clipboard.SetText(sb.ToString().TrimEnd());
+            TrySetClipboard(sb.ToString().TrimEnd());
+        }
+
+        private static void TrySetClipboard(string text)
+        {
+            try
+            {
+                Clipboard.SetText(text);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"クリップボードへのコピーに失敗しました。再度お試しください。\n{ex.Message}",
+                    "コピー失敗",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            }
         }
 
         private void Save()
@@ -137,7 +174,7 @@ namespace ChatNest.ViewModels
                 SaveAs();
                 return;
             }
-            WriteToFile(_currentFilePath);
+            TryWriteToFile(_currentFilePath, updatePath: false);
         }
 
         private void SaveAs()
@@ -150,28 +187,39 @@ namespace ChatNest.ViewModels
             };
 
             if (dlg.ShowDialog() == true)
-            {
-                _currentFilePath = dlg.FileName;
-                WriteToFile(_currentFilePath);
-            }
+                TryWriteToFile(dlg.FileName, updatePath: true);
         }
 
-        private void WriteToFile(string path)
+        private void TryWriteToFile(string path, bool updatePath)
         {
-            var session = new ChatSessionData
+            try
             {
-                Version = "0.1.0",
-                Messages = Messages.Select(m => new MessageData
+                var session = new ChatSessionData
                 {
-                    Id = m.Id,
-                    Speaker = m.Speaker.ToString(),
-                    Text = m.Text,
-                    CreatedAt = m.CreatedAt
-                }).ToList()
-            };
+                    Version = "0.1.0",
+                    Messages = Messages.Select(m => new MessageData
+                    {
+                        Id = m.Id,
+                        Speaker = m.Speaker.ToString(),
+                        Text = m.Text,
+                        CreatedAt = m.CreatedAt
+                    }).ToList()
+                };
 
-            var json = JsonSerializer.Serialize(session, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(path, json, Encoding.UTF8);
+                var json = JsonSerializer.Serialize(session, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(path, json, Encoding.UTF8);
+
+                if (updatePath)
+                    _currentFilePath = path;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"保存に失敗しました。\n{ex.Message}",
+                    "保存エラー",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
         }
 
         private void Load()
@@ -201,6 +249,8 @@ namespace ChatNest.ViewModels
                 }
 
                 Messages.Clear();
+                int skipped = 0;
+
                 foreach (var data in session.Messages)
                 {
                     if (Enum.TryParse<Speaker>(data.Speaker, out var speaker))
@@ -213,9 +263,22 @@ namespace ChatNest.ViewModels
                             CreatedAt = data.CreatedAt
                         });
                     }
+                    else
+                    {
+                        skipped++;
+                    }
                 }
 
                 _currentFilePath = dlg.FileName;
+
+                if (skipped > 0)
+                {
+                    MessageBox.Show(
+                        $"{skipped} 件の発言を読み込めませんでした。\n未知の発言者が含まれているため、該当メッセージをスキップしました。",
+                        "読み込み警告",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                }
             }
             catch (Exception ex)
             {

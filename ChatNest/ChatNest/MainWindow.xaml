@@ -133,7 +133,7 @@
                             Command="{Binding SaveCommand}"/>
                     <Button Style="{StaticResource GhostButton}"
                             Content="開く"
-                            ToolTip=".chatnesファイルを開く"
+                            ToolTip=".chatnestファイルを開く"
                             Margin="0,0,6,0"
                             Command="{Binding LoadCommand}"/>
                     <Button Style="{StaticResource DangerButton}"
