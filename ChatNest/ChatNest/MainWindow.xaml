@@ -5,6 +5,7 @@
         xmlns:vm="clr-namespace:ChatNest.ViewModels"
         xmlns:models="clr-namespace:ChatNest.Models"
         Title="ChatNest"
+        Icon="Resources/chatnest.ico"
         Width="760" Height="620"
         MinWidth="520" MinHeight="420"
         Background="#F5F5F7"
