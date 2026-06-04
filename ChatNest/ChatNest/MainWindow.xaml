@@ -6,7 +6,7 @@
         xmlns:models="clr-namespace:ChatNest.Models"
         Title="{Binding WindowTitle}"
         Icon="Resources/chatnest.ico"
-        Width="760" Height="620"
+        Width="520" Height="620"
         MinWidth="520" MinHeight="420"
         Background="#F5F5F7"
         FontFamily="Yu Gothic UI, Meiryo UI, sans-serif">
