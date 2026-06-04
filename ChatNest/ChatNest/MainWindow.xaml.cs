@@ -30,6 +30,25 @@ namespace ChatNest
             }
         }
 
+        private void FinishButton_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new FinishDialog { Owner = this };
+            dialog.ShowDialog();
+
+            switch (dialog.SelectedAction)
+            {
+                case FinishAction.CopyMarkdown:
+                    _vm.ExecuteMarkdownCopyWithSave();
+                    break;
+                case FinishAction.CopyIdeaNest:
+                    _vm.ExecuteIdeaNestCopyWithSave();
+                    break;
+                case FinishAction.DeleteAll:
+                    _vm.DeleteAllCommand.Execute(null);
+                    break;
+            }
+        }
+
         private void ScrollToBottom()
         {
             Dispatcher.InvokeAsync(
