@@ -125,6 +125,40 @@
                 </Setter>
             </Style>
 
+            <!-- Topmost toggle button -->
+            <Style x:Key="TopmostToggle" TargetType="ToggleButton">
+                <Setter Property="FontFamily" Value="Yu Gothic UI, Meiryo UI, sans-serif"/>
+                <Setter Property="FontSize" Value="11"/>
+                <Setter Property="Padding" Value="10,5"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Foreground" Value="#AAAAAA"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ToggleButton">
+                            <Border x:Name="border"
+                                    Background="#F0F0F0"
+                                    CornerRadius="6"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="#E3F2FD"/>
+                                    <Setter Property="Foreground" Value="#1565C0"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="border" Property="Opacity" Value="0.85"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="border" Property="Opacity" Value="0.7"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
             <!-- Speaker radio button style -->
             <Style x:Key="SpeakerToggle" TargetType="RadioButton">
                 <Setter Property="FontFamily" Value="Yu Gothic UI, Meiryo UI, sans-serif"/>

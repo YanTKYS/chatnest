@@ -8,6 +8,7 @@
         Icon="Resources/chatnest.ico"
         Width="520" Height="620"
         MinWidth="520" MinHeight="420"
+        Topmost="{Binding IsTopmost}"
         Background="#F5F5F7"
         FontFamily="Yu Gothic UI, Meiryo UI, sans-serif">
 
@@ -193,33 +194,52 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- Speaker selector -->
-                <StackPanel Grid.Row="0"
-                            Orientation="Horizontal"
-                            Margin="0,0,0,10">
-                    <TextBlock Text="発言者："
-                               FontSize="11"
-                               Foreground="#757575"
-                               VerticalAlignment="Center"
-                               Margin="0,0,8,0"/>
+                <!-- Speaker selector + shortcut hint + topmost toggle -->
+                <Grid Grid.Row="0" Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                    <RadioButton Style="{StaticResource SpeakerToggle}"
-                                 Content="自分"
-                                 IsChecked="{Binding SelectedSpeaker, Converter={StaticResource RadioConverter}, ConverterParameter=自分, Mode=TwoWay}"
-                                 GroupName="Speaker"/>
-                    <RadioButton Style="{StaticResource SpeakerToggle}"
-                                 Content="反論"
-                                 IsChecked="{Binding SelectedSpeaker, Converter={StaticResource RadioConverter}, ConverterParameter=反論, Mode=TwoWay}"
-                                 GroupName="Speaker"/>
-                    <RadioButton Style="{StaticResource SpeakerToggle}"
-                                 Content="補足"
-                                 IsChecked="{Binding SelectedSpeaker, Converter={StaticResource RadioConverter}, ConverterParameter=補足, Mode=TwoWay}"
-                                 GroupName="Speaker"/>
-                    <RadioButton Style="{StaticResource SpeakerToggle}"
-                                 Content="結論"
-                                 IsChecked="{Binding SelectedSpeaker, Converter={StaticResource RadioConverter}, ConverterParameter=結論, Mode=TwoWay}"
-                                 GroupName="Speaker"/>
-                </StackPanel>
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="発言者："
+                                   FontSize="11"
+                                   Foreground="#757575"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,8,0"/>
+                        <RadioButton Style="{StaticResource SpeakerToggle}"
+                                     Content="自分"
+                                     IsChecked="{Binding SelectedSpeaker, Converter={StaticResource RadioConverter}, ConverterParameter=自分, Mode=TwoWay}"
+                                     GroupName="Speaker"/>
+                        <RadioButton Style="{StaticResource SpeakerToggle}"
+                                     Content="反論"
+                                     IsChecked="{Binding SelectedSpeaker, Converter={StaticResource RadioConverter}, ConverterParameter=反論, Mode=TwoWay}"
+                                     GroupName="Speaker"/>
+                        <RadioButton Style="{StaticResource SpeakerToggle}"
+                                     Content="補足"
+                                     IsChecked="{Binding SelectedSpeaker, Converter={StaticResource RadioConverter}, ConverterParameter=補足, Mode=TwoWay}"
+                                     GroupName="Speaker"/>
+                        <RadioButton Style="{StaticResource SpeakerToggle}"
+                                     Content="結論"
+                                     IsChecked="{Binding SelectedSpeaker, Converter={StaticResource RadioConverter}, ConverterParameter=結論, Mode=TwoWay}"
+                                     GroupName="Speaker"/>
+                    </StackPanel>
+
+                    <TextBlock Grid.Column="1"
+                               Text="Ctrl / Shift + ← / → で切り替え"
+                               FontSize="10"
+                               Foreground="#C8C8C8"
+                               VerticalAlignment="Center"
+                               Margin="12,0,6,0"/>
+
+                    <ToggleButton Grid.Column="2"
+                                  Style="{StaticResource TopmostToggle}"
+                                  Content="最前面"
+                                  IsChecked="{Binding IsTopmost, Mode=TwoWay}"
+                                  VerticalAlignment="Center"
+                                  ToolTip="このウィンドウを常に最前面に表示する（ON/OFF）"/>
+                </Grid>
 
                 <!-- Input row: TextBox + Post button -->
                 <Grid Grid.Row="1">
