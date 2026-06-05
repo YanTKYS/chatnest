@@ -8,7 +8,7 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>ChatNest</AssemblyName>
     <RootNamespace>ChatNest</RootNamespace>
-    <Version>0.1.3</Version>
+    <Version>0.1.4</Version>
     <ApplicationIcon>Resources\chatnest.ico</ApplicationIcon>
   </PropertyGroup>
 

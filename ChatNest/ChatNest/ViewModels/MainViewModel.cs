@@ -18,11 +18,12 @@ namespace ChatNest.ViewModels
 {
     public class MainViewModel : INotifyPropertyChanged
     {
-        public const string AppVersion = "0.1.3";
+        public const string AppVersion = "0.1.4";
 
         private string _inputText = string.Empty;
         private Speaker _selectedSpeaker = Speaker.自分;
         private string? _currentFilePath;
+        private bool _isTopmost;
 
         private readonly SettingsService _settings = new();
 
@@ -43,6 +44,12 @@ namespace ChatNest.ViewModels
         {
             get => _selectedSpeaker;
             set { _selectedSpeaker = value; OnPropertyChanged(); }
+        }
+
+        public bool IsTopmost
+        {
+            get => _isTopmost;
+            set { _isTopmost = value; OnPropertyChanged(); }
         }
 
         public string WindowTitle => _currentFilePath != null
