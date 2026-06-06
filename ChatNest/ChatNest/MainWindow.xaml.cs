@@ -15,6 +15,7 @@ namespace ChatNest
             DataContext = _vm;
 
             _vm.Messages.CollectionChanged += (_, _) => ScrollToBottom();
+            Closing += (_, e) => { if (!_vm.ConfirmDiscardChanges()) e.Cancel = true; };
 
             if (filePath != null)
                 Loaded += (_, _) => _vm.LoadFromPath(filePath);

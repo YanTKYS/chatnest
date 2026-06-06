@@ -18,12 +18,13 @@ namespace ChatNest.ViewModels
 {
     public class MainViewModel : INotifyPropertyChanged
     {
-        public const string AppVersion = "0.1.4";
+        public const string AppVersion = "0.2.0";
 
         private string _inputText = string.Empty;
         private Speaker _selectedSpeaker = Speaker.自分;
         private string? _currentFilePath;
         private bool _isTopmost;
+        private bool _isDirty;
 
         private readonly SettingsService _settings = new();
 
@@ -50,6 +51,12 @@ namespace ChatNest.ViewModels
         {
             get => _isTopmost;
             set { _isTopmost = value; OnPropertyChanged(); }
+        }
+
+        public bool IsDirty
+        {
+            get => _isDirty;
+            private set { _isDirty = value; OnPropertyChanged(); }
         }
 
         public string WindowTitle => _currentFilePath != null
@@ -86,6 +93,43 @@ namespace ChatNest.ViewModels
         private void OnMessagesChanged(object? sender, NotifyCollectionChangedEventArgs e)
             => _deleteAllCommand.RaiseCanExecuteChanged();
 
+        // ── Unsaved-changes guard ────────────────────────────────────────────
+
+        // Returns true if it is safe to proceed (no dirty state, saved, or discarded).
+        // Returns false if the user cancelled.
+        public bool ConfirmDiscardChanges()
+        {
+            if (!IsDirty) return true;
+
+            var result = MessageBox.Show(
+                "未保存の変更があります。保存しますか？",
+                "未保存の変更",
+                MessageBoxButton.YesNoCancel,
+                MessageBoxImage.Question);
+
+            return result switch
+            {
+                MessageBoxResult.Yes    => SaveForConfirm(),
+                MessageBoxResult.No     => true,
+                _                       => false
+            };
+        }
+
+        private bool SaveForConfirm()
+        {
+            if (_currentFilePath != null)
+                return TryWriteToFile(_currentFilePath, updatePath: false);
+
+            var dlg = new SaveFileDialog
+            {
+                Filter = "ChatNest ファイル (*.chatnest)|*.chatnest",
+                DefaultExt = ".chatnest",
+                FileName = $"chatnest_{DateTime.Now:yyyyMMdd_HHmm}"
+            };
+            if (dlg.ShowDialog() != true) return false;
+            return TryWriteToFile(dlg.FileName, updatePath: true);
+        }
+
         // ── Speaker cycle ─────────────────────────────────────────────────────
 
         public void CycleSpeaker(bool forward)
@@ -106,17 +150,15 @@ namespace ChatNest.ViewModels
             if (string.IsNullOrEmpty(text)) return;
             Messages.Add(new Message { Speaker = SelectedSpeaker, Text = text });
             InputText = string.Empty;
+            IsDirty = true;
         }
 
         private void New()
         {
-            if (Messages.Count > 0 &&
-                MessageBox.Show("現在のログを破棄して新規チャットを開始しますか？", "新規チャット",
-                    MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
-                return;
-
+            if (!ConfirmDiscardChanges()) return;
             Messages.Clear();
             SetCurrentFile(null);
+            IsDirty = false;
         }
 
         // ── Delete ────────────────────────────────────────────────────────────
@@ -126,7 +168,10 @@ namespace ChatNest.ViewModels
             if (message == null) return;
             if (MessageBox.Show("この発言を削除しますか？", "削除の確認",
                     MessageBoxButton.OKCancel, MessageBoxImage.Question) == MessageBoxResult.OK)
+            {
                 Messages.Remove(message);
+                IsDirty = true;
+            }
         }
 
         private void DeleteAll()
@@ -134,7 +179,10 @@ namespace ChatNest.ViewModels
             if (Messages.Count == 0) return;
             if (MessageBox.Show("すべての発言を削除しますか？\nこの操作は元に戻せません。", "全件削除の確認",
                     MessageBoxButton.OKCancel, MessageBoxImage.Warning) == MessageBoxResult.OK)
+            {
                 Messages.Clear();
+                IsDirty = true;
+            }
         }
 
         // ── 終了処理コピー (save-then-copy) ──────────────────────────────────
@@ -239,6 +287,7 @@ namespace ChatNest.ViewModels
                 };
                 var json = JsonSerializer.Serialize(session, new JsonSerializerOptions { WriteIndented = true });
                 File.WriteAllText(path, json, Encoding.UTF8);
+                IsDirty = false;
 
                 if (updatePath)
                 {
@@ -273,10 +322,7 @@ namespace ChatNest.ViewModels
                 var session = JsonSerializer.Deserialize<ChatSessionData>(json);
                 if (session?.Messages == null) return;
 
-                if (Messages.Count > 0 &&
-                    MessageBox.Show("現在のログを破棄してファイルを読み込みますか？", "読み込みの確認",
-                        MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
-                    return;
+                if (!ConfirmDiscardChanges()) return;
 
                 Messages.Clear();
                 int skipped = 0;
@@ -292,6 +338,7 @@ namespace ChatNest.ViewModels
 
                 SetCurrentFile(path);
                 _settings.AddRecentFile(path);
+                IsDirty = false;
 
                 if (skipped > 0)
                     MessageBox.Show(
