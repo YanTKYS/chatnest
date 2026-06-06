@@ -146,7 +146,3 @@ cd ChatNest
 dotnet build ChatNest.sln
 dotnet run --project ChatNest/ChatNest.csproj
 ```
-
----
-
-*ChatNest v0.2.0 — Nest系ツールの軽量思考ログ*
