@@ -149,4 +149,4 @@ dotnet run --project ChatNest/ChatNest.csproj
 
 ---
 
-*ChatNest v0.2.0 — Nest系ツールの軽量思考ログ*
+*ChatNest v0.3.0 — Nest系ツールの軽量思考ログ*

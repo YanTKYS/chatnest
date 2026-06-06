@@ -273,6 +273,7 @@ namespace ChatNest.ViewModels
 
         private bool TryWriteToFile(string path, bool updatePath)
         {
+            var tmpPath = path + ".tmp";
             try
             {
                 var session = new ChatSessionData
@@ -287,7 +288,15 @@ namespace ChatNest.ViewModels
                     }).ToList()
                 };
                 var json = JsonSerializer.Serialize(session, new JsonSerializerOptions { WriteIndented = true });
-                File.WriteAllText(path, json, Encoding.UTF8);
+
+                // Write to temp file first, then atomically replace the target.
+                File.WriteAllText(tmpPath, json, Encoding.UTF8);
+
+                if (File.Exists(path))
+                    File.Replace(tmpPath, path, path + ".bak");
+                else
+                    File.Move(tmpPath, path);
+
                 IsDirty = false;
 
                 if (updatePath)
@@ -299,6 +308,7 @@ namespace ChatNest.ViewModels
             }
             catch (Exception ex)
             {
+                try { if (File.Exists(tmpPath)) File.Delete(tmpPath); } catch { }
                 MessageBox.Show($"保存に失敗しました。\n{ex.Message}", "保存エラー",
                     MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
