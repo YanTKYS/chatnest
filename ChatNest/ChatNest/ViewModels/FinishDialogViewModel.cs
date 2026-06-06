@@ -3,7 +3,7 @@ using System.Windows.Input;
 
 namespace ChatNest.ViewModels
 {
-    public enum FinishAction { None, CopyMarkdown, CopyIdeaNest, DeleteAll }
+    public enum FinishAction { None, CopyMarkdown, CopyIdeaNest, StartNew }
 
     public class FinishDialogViewModel
     {
@@ -12,14 +12,14 @@ namespace ChatNest.ViewModels
 
         public ICommand CopyMarkdownCommand { get; }
         public ICommand CopyIdeaNestCommand { get; }
-        public ICommand DeleteAllCommand { get; }
+        public ICommand StartNewCommand { get; }
         public ICommand CancelCommand { get; }
 
         public FinishDialogViewModel()
         {
             CopyMarkdownCommand = new RelayCommand(() => Select(FinishAction.CopyMarkdown));
             CopyIdeaNestCommand = new RelayCommand(() => Select(FinishAction.CopyIdeaNest));
-            DeleteAllCommand    = new RelayCommand(() => Select(FinishAction.DeleteAll));
+            StartNewCommand     = new RelayCommand(() => Select(FinishAction.StartNew));
             CancelCommand       = new RelayCommand(() => Select(FinishAction.None));
         }
 
