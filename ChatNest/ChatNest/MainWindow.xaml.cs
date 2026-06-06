@@ -57,8 +57,8 @@ namespace ChatNest
                 case FinishAction.CopyIdeaNest:
                     _vm.ExecuteIdeaNestCopyWithSave();
                     break;
-                case FinishAction.DeleteAll:
-                    _vm.DeleteAllCommand.Execute(null);
+                case FinishAction.StartNew:
+                    _vm.NewCommand.Execute(null);
                     break;
             }
         }

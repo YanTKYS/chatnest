@@ -18,7 +18,7 @@ namespace ChatNest.ViewModels
 {
     public class MainViewModel : INotifyPropertyChanged
     {
-        public const string AppVersion = "0.2.0";
+        public const string AppVersion = "0.3.0";
 
         private string _inputText = string.Empty;
         private Speaker _selectedSpeaker = Speaker.自分;
@@ -66,11 +66,9 @@ namespace ChatNest.ViewModels
         public Speaker[] Speakers { get; } = Enum.GetValues<Speaker>();
 
         private readonly RelayCommand _postCommand;
-        private readonly RelayCommand _deleteAllCommand;
 
         public ICommand PostCommand => _postCommand;
         public ICommand DeleteMessageCommand { get; }
-        public ICommand DeleteAllCommand => _deleteAllCommand;
         public ICommand SaveCommand { get; }
         public ICommand SaveAsCommand { get; }
         public ICommand LoadCommand { get; }
@@ -78,20 +76,14 @@ namespace ChatNest.ViewModels
 
         public MainViewModel()
         {
-            _postCommand    = new RelayCommand(Post, () => !string.IsNullOrWhiteSpace(InputText));
-            _deleteAllCommand = new RelayCommand(DeleteAll, () => Messages.Count > 0);
+            _postCommand = new RelayCommand(Post, () => !string.IsNullOrWhiteSpace(InputText));
 
             DeleteMessageCommand = new RelayCommand<Message>(DeleteMessage);
             SaveCommand   = new RelayCommand(Save);
             SaveAsCommand = new RelayCommand(SaveAs);
             LoadCommand   = new RelayCommand(Load);
             NewCommand    = new RelayCommand(New);
-
-            Messages.CollectionChanged += OnMessagesChanged;
         }
-
-        private void OnMessagesChanged(object? sender, NotifyCollectionChangedEventArgs e)
-            => _deleteAllCommand.RaiseCanExecuteChanged();
 
         // ── Unsaved-changes guard ────────────────────────────────────────────
 
@@ -139,6 +131,14 @@ namespace ChatNest.ViewModels
             return TryWriteToFile(dlg.FileName, updatePath: true);
         }
 
+        // ── Change-time save ─────────────────────────────────────────────────
+
+        private void SaveIfFileOpen()
+        {
+            if (_currentFilePath != null)
+                TryWriteToFile(_currentFilePath, updatePath: false);
+        }
+
         // ── Speaker cycle ─────────────────────────────────────────────────────
 
         public void CycleSpeaker(bool forward)
@@ -160,6 +160,7 @@ namespace ChatNest.ViewModels
             Messages.Add(new Message { Speaker = SelectedSpeaker, Text = text });
             InputText = string.Empty;
             IsDirty = true;
+            SaveIfFileOpen();
         }
 
         private void New()
@@ -181,17 +182,7 @@ namespace ChatNest.ViewModels
             {
                 Messages.Remove(message);
                 IsDirty = true;
-            }
-        }
-
-        private void DeleteAll()
-        {
-            if (Messages.Count == 0) return;
-            if (MessageBox.Show("すべての発言を削除しますか？\nこの操作は元に戻せません。", "全件削除の確認",
-                    MessageBoxButton.OKCancel, MessageBoxImage.Warning) == MessageBoxResult.OK)
-            {
-                Messages.Clear();
-                IsDirty = true;
+                SaveIfFileOpen();
             }
         }
 

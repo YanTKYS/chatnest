@@ -106,28 +106,23 @@
                 <!-- Action buttons -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Style="{StaticResource GhostButton}"
-                            Content="新規"
-                            ToolTip="新規チャットを開始"
-                            Margin="0,0,4,0"
-                            Command="{Binding NewCommand}"/>
-                    <Button Style="{StaticResource GhostButton}"
                             Content="開く"
                             ToolTip=".chatnestファイルを開く"
                             Margin="0,0,4,0"
                             Command="{Binding LoadCommand}"/>
                     <Button Style="{StaticResource GhostButton}"
-                            Content="保存"
-                            ToolTip="ファイルに保存（未保存の場合は名前を付けて保存）"
+                            Content="上書き保存"
+                            ToolTip="現在のファイルに保存（保存先がない場合はダイアログを表示）"
                             Margin="0,0,4,0"
                             Command="{Binding SaveCommand}"/>
                     <Button Style="{StaticResource GhostButton}"
-                            Content="名前を付けて保存"
+                            Content="新規保存"
                             ToolTip="新しいファイルとして保存"
                             Margin="0,0,12,0"
                             Command="{Binding SaveAsCommand}"/>
                     <Button Style="{StaticResource PrimaryButton}"
                             Content="終了処理"
-                            ToolTip="コピー・削除などの終了処理"
+                            ToolTip="コピー・新規チャット開始などの終了処理"
                             Click="FinishButton_Click"/>
                 </StackPanel>
             </Grid>
