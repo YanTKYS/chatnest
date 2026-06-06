@@ -166,6 +166,7 @@ namespace ChatNest.ViewModels
         {
             if (!ConfirmDiscardChanges()) return;
             Messages.Clear();
+            InputText = string.Empty;
             SetCurrentFile(null);
             IsDirty = false;
         }
@@ -336,6 +337,7 @@ namespace ChatNest.ViewModels
                 if (session?.Messages == null) return;
 
                 Messages.Clear();
+                InputText = string.Empty;
                 int skipped = 0;
                 foreach (var data in session.Messages)
                 {
