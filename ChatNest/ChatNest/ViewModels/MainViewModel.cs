@@ -99,20 +99,29 @@ namespace ChatNest.ViewModels
         // Returns false if the user cancelled.
         public bool ConfirmDiscardChanges()
         {
-            if (!IsDirty) return true;
-
-            var result = MessageBox.Show(
-                "未保存の変更があります。保存しますか？",
-                "未保存の変更",
-                MessageBoxButton.YesNoCancel,
-                MessageBoxImage.Question);
-
-            return result switch
+            if (IsDirty)
             {
-                MessageBoxResult.Yes    => SaveForConfirm(),
-                MessageBoxResult.No     => true,
-                _                       => false
-            };
+                var result = MessageBox.Show(
+                    "未保存の変更があります。保存しますか？",
+                    "未保存の変更",
+                    MessageBoxButton.YesNoCancel,
+                    MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.Cancel) return false;
+                if (result == MessageBoxResult.Yes && !SaveForConfirm()) return false;
+                // No: discard, or Yes and save succeeded → fall through
+            }
+
+            if (!string.IsNullOrWhiteSpace(InputText))
+            {
+                return MessageBox.Show(
+                    "未投稿の入力があります。破棄しますか？",
+                    "未投稿の入力",
+                    MessageBoxButton.OKCancel,
+                    MessageBoxImage.Question) == MessageBoxResult.OK;
+            }
+
+            return true;
         }
 
         private bool SaveForConfirm()
@@ -318,11 +327,13 @@ namespace ChatNest.ViewModels
         {
             try
             {
+                // Confirm before reading so that saving the current file first
+                // produces the correct content when the target path is the same file.
+                if (!ConfirmDiscardChanges()) return;
+
                 var json = File.ReadAllText(path, Encoding.UTF8);
                 var session = JsonSerializer.Deserialize<ChatSessionData>(json);
                 if (session?.Messages == null) return;
-
-                if (!ConfirmDiscardChanges()) return;
 
                 Messages.Clear();
                 int skipped = 0;
