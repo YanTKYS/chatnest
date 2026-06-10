@@ -18,7 +18,7 @@ namespace ChatNest.ViewModels
 {
     public class MainViewModel : INotifyPropertyChanged
     {
-        public const string AppVersion = "0.3.0";
+        public const string AppVersion = "0.3.1";
 
         private string _inputText = string.Empty;
         private Speaker _selectedSpeaker = Speaker.自分;
@@ -195,10 +195,15 @@ namespace ChatNest.ViewModels
             var sb = new StringBuilder();
             sb.AppendLine("# ChatNest Log");
             sb.AppendLine();
+            Speaker? prevSpeaker = null;
             foreach (var msg in Messages)
             {
-                sb.AppendLine($"## {msg.Speaker}");
-                sb.AppendLine();
+                if (msg.Speaker != prevSpeaker)
+                {
+                    sb.AppendLine($"## {msg.Speaker}");
+                    sb.AppendLine();
+                    prevSpeaker = msg.Speaker;
+                }
                 sb.AppendLine(msg.Text);
                 sb.AppendLine();
             }
@@ -213,9 +218,15 @@ namespace ChatNest.ViewModels
             if (!SaveForCopy()) return;
 
             var sb = new StringBuilder();
+            Speaker? prevSpeaker = null;
             foreach (var msg in Messages)
             {
-                sb.AppendLine($"【{msg.Speaker}】");
+                if (msg.Speaker != prevSpeaker)
+                {
+                    if (prevSpeaker != null) sb.AppendLine();
+                    sb.AppendLine($"【{msg.Speaker}】");
+                    prevSpeaker = msg.Speaker;
+                }
                 sb.AppendLine(msg.Text);
                 sb.AppendLine();
             }
