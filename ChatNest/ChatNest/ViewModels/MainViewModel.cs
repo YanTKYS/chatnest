@@ -223,7 +223,6 @@ namespace ChatNest.ViewModels
             {
                 if (msg.Speaker != prevSpeaker)
                 {
-                    if (prevSpeaker != null) sb.AppendLine();
                     sb.AppendLine($"【{msg.Speaker}】");
                     prevSpeaker = msg.Speaker;
                 }
