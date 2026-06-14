@@ -1,6 +1,5 @@
 using System;
-using System.Collections.ObjectModel;
-using System.Collections.Specialized;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -18,34 +17,14 @@ namespace ChatNest.ViewModels
 {
     public class MainViewModel : INotifyPropertyChanged
     {
-        public const string AppVersion = "0.3.1";
+        public const string AppVersion = "0.4.0";
 
-        private string _inputText = string.Empty;
-        private Speaker _selectedSpeaker = Speaker.自分;
         private string? _currentFilePath;
         private bool _isTopmost;
-        private bool _isDirty;
 
         private readonly SettingsService _settings = new();
 
-        public ObservableCollection<Message> Messages { get; } = new();
-
-        public string InputText
-        {
-            get => _inputText;
-            set
-            {
-                _inputText = value;
-                OnPropertyChanged();
-                _postCommand.RaiseCanExecuteChanged();
-            }
-        }
-
-        public Speaker SelectedSpeaker
-        {
-            get => _selectedSpeaker;
-            set { _selectedSpeaker = value; OnPropertyChanged(); }
-        }
+        public ChatNestWorkspaceViewModel Workspace { get; } = new();
 
         public bool IsTopmost
         {
@@ -53,45 +32,30 @@ namespace ChatNest.ViewModels
             set { _isTopmost = value; OnPropertyChanged(); }
         }
 
-        public bool IsDirty
-        {
-            get => _isDirty;
-            private set { _isDirty = value; OnPropertyChanged(); }
-        }
-
         public string WindowTitle => _currentFilePath != null
             ? $"ChatNest - {Path.GetFileName(_currentFilePath)} - ver{AppVersion}"
             : $"ChatNest - ver{AppVersion}";
 
-        public Speaker[] Speakers { get; } = Enum.GetValues<Speaker>();
-
-        private readonly RelayCommand _postCommand;
-
-        public ICommand PostCommand => _postCommand;
-        public ICommand DeleteMessageCommand { get; }
-        public ICommand SaveCommand { get; }
+        public ICommand SaveCommand   { get; }
         public ICommand SaveAsCommand { get; }
-        public ICommand LoadCommand { get; }
-        public ICommand NewCommand { get; }
+        public ICommand LoadCommand   { get; }
+        public ICommand NewCommand    { get; }
 
         public MainViewModel()
         {
-            _postCommand = new RelayCommand(Post, () => !string.IsNullOrWhiteSpace(InputText));
-
-            DeleteMessageCommand = new RelayCommand<Message>(DeleteMessage);
             SaveCommand   = new RelayCommand(Save);
             SaveAsCommand = new RelayCommand(SaveAs);
             LoadCommand   = new RelayCommand(Load);
             NewCommand    = new RelayCommand(New);
+
+            Workspace.WorkspaceModified += (_, _) => SaveIfFileOpen();
         }
 
         // ── Unsaved-changes guard ────────────────────────────────────────────
 
-        // Returns true if it is safe to proceed (no dirty state, saved, or discarded).
-        // Returns false if the user cancelled.
         public bool ConfirmDiscardChanges()
         {
-            if (IsDirty)
+            if (Workspace.IsDirty)
             {
                 var result = MessageBox.Show(
                     "未保存の変更があります。保存しますか？",
@@ -101,10 +65,9 @@ namespace ChatNest.ViewModels
 
                 if (result == MessageBoxResult.Cancel) return false;
                 if (result == MessageBoxResult.Yes && !SaveForConfirm()) return false;
-                // No: discard, or Yes and save succeeded → fall through
             }
 
-            if (!string.IsNullOrWhiteSpace(InputText))
+            if (!string.IsNullOrWhiteSpace(Workspace.InputText))
             {
                 return MessageBox.Show(
                     "未投稿の入力があります。破棄しますか？",
@@ -139,51 +102,13 @@ namespace ChatNest.ViewModels
                 TryWriteToFile(_currentFilePath, updatePath: false);
         }
 
-        // ── Speaker cycle ─────────────────────────────────────────────────────
-
-        public void CycleSpeaker(bool forward)
-        {
-            var speakers = Enum.GetValues<Speaker>();
-            int idx = Array.IndexOf(speakers, SelectedSpeaker);
-            idx = forward
-                ? (idx + 1) % speakers.Length
-                : (idx - 1 + speakers.Length) % speakers.Length;
-            SelectedSpeaker = speakers[idx];
-        }
-
-        // ── Post / New ────────────────────────────────────────────────────────
-
-        private void Post()
-        {
-            var text = InputText.Trim();
-            if (string.IsNullOrEmpty(text)) return;
-            Messages.Add(new Message { Speaker = SelectedSpeaker, Text = text });
-            InputText = string.Empty;
-            IsDirty = true;
-            SaveIfFileOpen();
-        }
+        // ── New ──────────────────────────────────────────────────────────────
 
         private void New()
         {
             if (!ConfirmDiscardChanges()) return;
-            Messages.Clear();
-            InputText = string.Empty;
+            Workspace.Clear();
             SetCurrentFile(null);
-            IsDirty = false;
-        }
-
-        // ── Delete ────────────────────────────────────────────────────────────
-
-        private void DeleteMessage(Message? message)
-        {
-            if (message == null) return;
-            if (MessageBox.Show("この発言を削除しますか？", "削除の確認",
-                    MessageBoxButton.OKCancel, MessageBoxImage.Question) == MessageBoxResult.OK)
-            {
-                Messages.Remove(message);
-                IsDirty = true;
-                SaveIfFileOpen();
-            }
         }
 
         // ── 終了処理コピー (save-then-copy) ──────────────────────────────────
@@ -191,24 +116,7 @@ namespace ChatNest.ViewModels
         public void ExecuteMarkdownCopyWithSave()
         {
             if (!SaveForCopy()) return;
-
-            var sb = new StringBuilder();
-            sb.AppendLine("# ChatNest Log");
-            sb.AppendLine();
-            Speaker? prevSpeaker = null;
-            foreach (var msg in Messages)
-            {
-                if (msg.Speaker != prevSpeaker)
-                {
-                    sb.AppendLine($"## {msg.Speaker}");
-                    sb.AppendLine();
-                    prevSpeaker = msg.Speaker;
-                }
-                sb.AppendLine(msg.Text);
-                sb.AppendLine();
-            }
-
-            if (TrySetClipboard(sb.ToString().TrimEnd()))
+            if (TrySetClipboard(Workspace.BuildMarkdownCopyText()))
                 MessageBox.Show("Markdown形式でコピーしました。", "コピー完了",
                     MessageBoxButton.OK, MessageBoxImage.Information);
         }
@@ -216,26 +124,11 @@ namespace ChatNest.ViewModels
         public void ExecuteIdeaNestCopyWithSave()
         {
             if (!SaveForCopy()) return;
-
-            var sb = new StringBuilder();
-            Speaker? prevSpeaker = null;
-            foreach (var msg in Messages)
-            {
-                if (msg.Speaker != prevSpeaker)
-                {
-                    sb.AppendLine($"【{msg.Speaker}】");
-                    prevSpeaker = msg.Speaker;
-                }
-                sb.AppendLine(msg.Text);
-                sb.AppendLine();
-            }
-
-            if (TrySetClipboard(sb.ToString().TrimEnd()))
+            if (TrySetClipboard(Workspace.BuildIdeaNestCopyText()))
                 MessageBox.Show("IdeaNest用形式でコピーしました。", "コピー完了",
                     MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        // 保存してからコピー。保存キャンセル時は false を返す。
         private bool SaveForCopy()
         {
             if (_currentFilePath != null)
@@ -289,7 +182,7 @@ namespace ChatNest.ViewModels
                 var session = new ChatSessionData
                 {
                     Version = AppVersion,
-                    Messages = Messages.Select(m => new MessageData
+                    Messages = Workspace.Messages.Select(m => new MessageData
                     {
                         Id = m.Id,
                         Speaker = m.Speaker.ToString(),
@@ -299,7 +192,6 @@ namespace ChatNest.ViewModels
                 };
                 var json = JsonSerializer.Serialize(session, new JsonSerializerOptions { WriteIndented = true });
 
-                // Write to temp file first, then atomically replace the target.
                 File.WriteAllText(tmpPath, json, Encoding.UTF8);
 
                 if (File.Exists(path))
@@ -307,7 +199,7 @@ namespace ChatNest.ViewModels
                 else
                     File.Move(tmpPath, path);
 
-                IsDirty = false;
+                Workspace.MarkSaved();
 
                 if (updatePath)
                 {
@@ -339,30 +231,26 @@ namespace ChatNest.ViewModels
         {
             try
             {
-                // Confirm before reading so that saving the current file first
-                // produces the correct content when the target path is the same file.
                 if (!ConfirmDiscardChanges()) return;
 
                 var json = File.ReadAllText(path, Encoding.UTF8);
                 var session = JsonSerializer.Deserialize<ChatSessionData>(json);
                 if (session?.Messages == null) return;
 
-                Messages.Clear();
-                InputText = string.Empty;
+                var messages = new List<Message>();
                 int skipped = 0;
                 foreach (var data in session.Messages)
                 {
-                    // Migrate renamed speaker: 要約 → 結論
                     var speakerName = data.Speaker == "要約" ? "結論" : data.Speaker;
                     if (Enum.TryParse<Speaker>(speakerName, out var speaker))
-                        Messages.Add(new Message { Id = data.Id, Speaker = speaker, Text = data.Text, CreatedAt = data.CreatedAt });
+                        messages.Add(new Message { Id = data.Id, Speaker = speaker, Text = data.Text, CreatedAt = data.CreatedAt });
                     else
                         skipped++;
                 }
 
+                Workspace.LoadMessages(messages);
                 SetCurrentFile(path);
                 _settings.AddRecentFile(path);
-                IsDirty = false;
 
                 if (skipped > 0)
                     MessageBox.Show(

@@ -1,5 +1,4 @@
 using System.Windows;
-using System.Windows.Input;
 using ChatNest.ViewModels;
 
 namespace ChatNest
@@ -14,34 +13,10 @@ namespace ChatNest
             _vm = new MainViewModel();
             DataContext = _vm;
 
-            _vm.Messages.CollectionChanged += (_, _) => ScrollToBottom();
             Closing += (_, e) => { if (!_vm.ConfirmDiscardChanges()) e.Cancel = true; };
 
             if (filePath != null)
                 Loaded += (_, _) => _vm.LoadFromPath(filePath);
-        }
-
-        private void InputBox_PreviewKeyDown(object sender, KeyEventArgs e)
-        {
-            var mods = Keyboard.Modifiers;
-
-            // Post: Ctrl+Enter or Shift+Enter
-            if (e.Key == Key.Enter &&
-                (mods == ModifierKeys.Control || mods == ModifierKeys.Shift))
-            {
-                if (_vm.PostCommand.CanExecute(null))
-                    _vm.PostCommand.Execute(null);
-                e.Handled = true;
-                return;
-            }
-
-            // Speaker cycle: Ctrl+→/← or Shift+→/←
-            if ((e.Key == Key.Right || e.Key == Key.Left) &&
-                (mods == ModifierKeys.Control || mods == ModifierKeys.Shift))
-            {
-                _vm.CycleSpeaker(e.Key == Key.Right);
-                e.Handled = true;
-            }
         }
 
         private void FinishButton_Click(object sender, RoutedEventArgs e)
@@ -61,13 +36,6 @@ namespace ChatNest
                     _vm.NewCommand.Execute(null);
                     break;
             }
-        }
-
-        private void ScrollToBottom()
-        {
-            Dispatcher.InvokeAsync(
-                () => ChatScrollViewer.ScrollToBottom(),
-                System.Windows.Threading.DispatcherPriority.Background);
         }
     }
 }
