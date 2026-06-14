@@ -1,5 +1,16 @@
 # Release Notes
 
+## v0.4.1 — v0.4.x 仕上げ
+
+v0.4.0の切り出し後の最終整理リリース。機能追加・UI変更なし。
+
+### 変更
+
+- **READMEの最前面ボタン説明を修正**: v0.4.0で最前面トグルをヘッダーへ移動したため、説明文を「発言者選択欄の右端」→「ヘッダー右側」に更新
+- **NestSuite統合に向けた開発メモを追加**: `docs/nestsuite-integration-notes.md` に `ChatNestWorkspaceView` の将来の配置想定・実装方針を記録
+
+---
+
 ## v0.4.0 — AppShell / WorkspaceView 責務分離
 
 内部構造の整理リリース。UI/UX・ファイル形式・操作感に変更なし。
