@@ -12,11 +12,11 @@ namespace ChatNest.Views
         public ChatNestWorkspaceView()
         {
             InitializeComponent();
+            DataContextChanged += OnDataContextChanged;
         }
 
-        protected override void OnDataContextChanged(DependencyPropertyChangedEventArgs e)
+        private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            base.OnDataContextChanged(e);
             if (e.OldValue is ChatNestWorkspaceViewModel oldVm)
                 oldVm.Messages.CollectionChanged -= OnMessagesChanged;
             if (e.NewValue is ChatNestWorkspaceViewModel newVm)
