@@ -1,5 +1,18 @@
 # Release Notes
 
+## v0.4.0 — AppShell / WorkspaceView 責務分離
+
+内部構造の整理リリース。UI/UX・ファイル形式・操作感に変更なし。
+
+### 変更
+
+- **`ChatNestWorkspaceView` / `ChatNestWorkspaceViewModel` を新設**: メッセージ一覧・入力欄・発言者選択・投稿・削除・発言者ショートカット・コピーテキスト生成をUserControlとして切り出し
+- **`MainWindow` / `MainViewModel` をアプリ外枠として整理**: ファイル操作・スタートダイアログ・終了処理・ウィンドウタイトル・最前面トグルを担当。ワークスペース操作はWorkspaceへ委譲
+- **最前面トグルをヘッダーへ移動**: 発言者選択欄の右端からヘッダーのボタン列に移動（機能は同一）
+- **`WorkspaceModified` イベントパターン**: WorkspaceViewModelが変更イベントを発行 → MainViewModelが購読 → 変更時保存を実行
+
+---
+
 ## v0.3.1 — コピー集約改善
 
 コピー出力の読みやすさを改善する「出口改善」リリース。ChatNest本体の機能追加はなし。
