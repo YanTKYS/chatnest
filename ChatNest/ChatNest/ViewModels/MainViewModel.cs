@@ -17,7 +17,7 @@ namespace ChatNest.ViewModels
 {
     public class MainViewModel : INotifyPropertyChanged
     {
-        public const string AppVersion = "0.4.0";
+        public const string AppVersion = "0.4.1";
 
         private string? _currentFilePath;
         private bool _isTopmost;
